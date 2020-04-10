@@ -1,0 +1,19 @@
+[package]
+name = "neat-py"
+version = "0.1.0"
+authors = ["Shashi Kant <shashitnak@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "neat_py"
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+version = "0.9.1"
+features = ["extension-module"]
+
+[dependencies]
+neat-rs = "0.1.7"
+slow_nn = "0.1.1"
