@@ -16,5 +16,5 @@ features = ["extension-module"]
 
 [dependencies]
 neat-rs = "0.1.8"
-slow_nn = "0.1.2"
+slow_nn = "0.1.21"
 bincode = "1.2.1"

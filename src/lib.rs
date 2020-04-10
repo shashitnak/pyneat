@@ -1,7 +1,5 @@
 use pyo3::prelude::*;
 use neat_rs::Genotype;
-use std::fs::File;
-use std::io::prelude::*;
 
 #[pyclass]
 struct Network {
@@ -27,18 +25,13 @@ impl Network {
     }
 
     fn save(&self, path: &str) -> PyResult<&'static str> {
-        let mut file = File::create(path)?;
-        let buffer: Vec<u8> = bincode::serialize(&self.net).expect("Error saving file");
-        file.write(&buffer)?;
+        self.net.save(path)?;
         Ok("File written successfully.")
     }
 
     #[new]
-    fn new(path: String) -> PyResult<Self> {
-        let mut file = File::open(path)?;
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer)?;
-        let net = bincode::deserialize(&buffer).expect("Error reading file");
+    fn new(path: &str) -> PyResult<Self> {
+        let net = slow_nn::Network::load(path)?;
         Ok(Self { net })
     }
 }
