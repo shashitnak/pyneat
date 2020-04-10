@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 use neat_rs::Genotype;
+use std::fs::File;
+use std::io::prelude::*;
 
 #[pyclass]
 struct Network {
@@ -16,12 +18,28 @@ fn tanh(x: f64) -> f64 {
 
 #[pymethods]
 impl Network {
-    fn predict(&self, input: Vec<f64>, activation: String) -> Vec<f64> {
+    fn predict(&self, input: Vec<f64>, activation: &str) -> Vec<f64> {
         if activation == "sigmoid" {
             self.net.predict(&input, sigmoid)
         } else {
             self.net.predict(&input, tanh)
         }
+    }
+
+    fn save(&self, path: &str) -> PyResult<&'static str> {
+        let mut file = File::create(path)?;
+        let buffer: Vec<u8> = bincode::serialize(&self.net).expect("Error saving file");
+        file.write(&buffer)?;
+        Ok("File written successfully.")
+    }
+
+    #[new]
+    fn new(path: String) -> PyResult<Self> {
+        let mut file = File::open(path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        let net = bincode::deserialize(&buffer).expect("Error reading file");
+        Ok(Self { net })
     }
 }
 
@@ -56,6 +74,7 @@ impl Neat {
 
 #[pymodule]
 fn neat_py(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Network>()?;
     m.add_class::<Neat>()?;
     Ok(())
 }
