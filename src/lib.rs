@@ -54,11 +54,14 @@ impl Neat {
         }
     }
 
-    fn eval(&mut self, func: PyObject) {
+    fn eval(&mut self, func: PyObject, save_fittest: bool) {
         let (scores, total_score) = self.neat.calculate_fitness(|genome, display| {
             let gil = Python::acquire_gil();
             let py = gil.python();
             let network = Network { net: genome.get_network() };
+            if save_fittest && display {
+                network.save("Net").expect("Some error occured");
+            }
             let score: f64 = func
                 .call1(py, (network, display))
                 .expect("Error occured when calling function")
