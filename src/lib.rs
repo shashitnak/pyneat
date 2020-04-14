@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use neat_rs::Genotype;
+use std::time::SystemTime;
 
 #[pyclass]
 struct Network {
@@ -54,13 +55,32 @@ impl Neat {
         }
     }
 
-    fn eval(&mut self, func: PyObject, save_fittest: bool) {
+    fn eval(&mut self, func: PyObject) {
         let (scores, total_score) = self.neat.calculate_fitness(|genome, display| {
             let gil = Python::acquire_gil();
             let py = gil.python();
             let network = Network { net: genome.get_network() };
-            if save_fittest && display {
-                network.save("Net").expect("Some error occured");
+            let score: f64 = func
+                .call1(py, (network, display))
+                .expect("Error occured when calling function")
+                .extract(py)
+                .expect("Could not convert to float");
+            score
+        });
+        self.neat.next_generation(&scores, total_score);
+    }
+
+    fn eval_save(&mut self, func: PyObject, name: &str) {
+        let (scores, total_score) = self.neat.calculate_fitness(|genome, display| {
+            let gil = Python::acquire_gil();
+            let py = gil.python();
+            let network = Network { net: genome.get_network() };
+            if display {
+                let stamp = SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .expect("Something's wrong with your time")
+                    .as_secs();
+                network.save(&format!("{}{}", name, stamp)).expect("Some error occured");
             }
             let score: f64 = func
                 .call1(py, (network, display))
