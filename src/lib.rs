@@ -16,6 +16,12 @@ fn tanh(x: f64) -> f64 {
 
 #[pymethods]
 impl Network {
+    #[new]
+    fn new(path: &str) -> PyResult<Self> {
+        let net = slow_nn::Network::load(path)?;
+        Ok(Self { net })
+    }
+
     fn predict(&self, input: Vec<f64>, activation: &str) -> Vec<f64> {
         if activation == "sigmoid" {
             self.net.predict(&input, sigmoid)
@@ -29,10 +35,8 @@ impl Network {
         Ok("File written successfully.")
     }
 
-    #[new]
-    fn new(path: &str) -> PyResult<Self> {
-        let net = slow_nn::Network::load(path)?;
-        Ok(Self { net })
+    fn to_bytes(&self) -> Vec<u8> {
+        self.net.to_bytes().unwrap()
     }
 }
 
@@ -51,7 +55,7 @@ impl Neat {
     }
 
     fn eval(&mut self, func: PyObject) {
-        self.neat.next_generation(|genome, display| {
+        let (scores, total_score) = self.neat.calculate_fitness(|genome, display| {
             let gil = Python::acquire_gil();
             let py = gil.python();
             let network = Network { net: genome.get_network() };
@@ -62,6 +66,7 @@ impl Neat {
                 .expect("Could not convert to float");
             score
         });
+        self.neat.next_generation(&scores, total_score);
     }
 }
 
